@@ -53,7 +53,7 @@
         <textarea
           type="textarea"
           class="add-form-text"
-          placeholder="Введите ваш коментарий"
+          placeholder="Введите ваш комментарий"
           rows="4"
         ></textarea>
         <div class="add-form-row">
@@ -63,51 +63,109 @@
     </div>
   </body>
   <style>
-    .error{
+    .error {
       background-color: red;
     }
   </style>
   <script>
-  "use strict";
+    "use strict";
+    const commentsData = [];
+    const addButtonElement = document.getElementById('add-button');
+    const addListElement = document.getElementById('list');
+    const addFormNameElement = document.querySelector('.add-form-name');
+    const addFormText = document.querySelector('.add-form-text');
 
-const addButtonElement = document.getElementById('add-button');
-const addListElement = document.getElementById('list');
-const addFormNameElement = document.querySelector(".add-form-name");
-const addFormText = document.querySelector(".add-form-text");
+  const initEventListeners = () => {
+  addListElement.addEventListener('click', handleLikeButtonClick);
+};
 
-addButtonElement.addEventListener('click', addNewComment);
+    const renderComment = (comment, index) => {
+      const commentElement = document.createElement('li');
+      commentElement.classList.add('comment');
 
-function addNewComment() {
-  addFormNameElement.classList.remove("error")
-    addFormText.classList.remove("error")
-  // Проверяем, что оба поля не пустые
-  if (addFormNameElement.value === "" || addFormText.value === "") {
-    addFormNameElement.classList.add("error")
-    addFormText.classList.add("error")
-    return;
+      commentElement.innerHTML = `
+        <div class="comment-header">
+          <div>${comment.name}</div>
+          <div>${comment.date}</div>
+        </div>
+        <div class="comment-body">
+          <div class="comment-text">${comment.text}</div>
+        </div>
+        <div class="comment-footer">
+          <div class="likes">
+            <span class="likes-counter">${comment.likesCount}</span>
+            <button class="like-button ${comment.isLiked ? '-active-like' : ''}" data-comment-id="${index}"></button>
+          </div>
+        </div>
+      `;
+
+      return commentElement;
+    };
+
+    const renderComments = () => {
+      addListElement.innerHTML = '';
+      commentsData.forEach((comment, index) => {
+        const commentElement = renderComment(comment, index);
+        addListElement.appendChild(commentElement);
+      });
+    };
+    const handleLikeButtonClick = () => {
+  const lastCommentIndex = commentsData.length - 1;
+  const lastComment = commentsData[lastCommentIndex];
+
+  if (lastComment) {
+    lastComment.isLiked = !lastComment.isLiked;
+    lastComment.likesCount = lastComment.isLiked ? lastComment.likesCount + 1 : lastComment.likesCount - 1;
+
+    // Обновим элемент последнего комментария
+    const lastCommentElement = addListElement.lastElementChild;
+    if (lastCommentElement) {
+      const likesCounter = lastCommentElement.querySelector('.likes-counter');
+      const likeButton = lastCommentElement.querySelector('.like-button');
+
+      likesCounter.textContent = lastComment.likesCount;
+      likeButton.className = `like-button ${lastComment.isLiked ? '-active-like' : ''}`;
+    }
   }
+};
 
-  let commentList = document.getElementById('list');
-  commentList.innerHTML += `
-    <li class="comment">
-      <div class="comment-header">
-        <div>${addFormNameElement.value}</div>
-        <div>${(new Date()).toLocaleString()}</div>
-      </div>
-      <div class="comment-body">
-        <div class="comment-text">
-          ${addFormText.value}
-        </div>
-      </div>
-      <div class="comment-footer">
-        <div class="likes">
-          <span class="likes-counter">0</span>
-          <button class="like-button"></button>
-        </div>
-      </div>
-    </li>`;
 
-}
 
+
+
+    initEventListeners();
+
+    addButtonElement.addEventListener('click', () => {
+      addNewComment();
+    });
+
+    function addNewComment() {
+      addFormNameElement.classList.remove('error');
+      addFormText.classList.remove('error');
+
+      if (addFormNameElement.value === '' || addFormText.value === '') {
+        addFormNameElement.classList.add('error');
+        addFormText.classList.add('error');
+        return;
+      }
+
+      const newComment = {
+        name: addFormNameElement.value,
+        date: new Date().toLocaleString(),
+        text: addFormText.value,
+        likesCount: 0,
+        isLiked: false,
+      };
+
+      commentsData.push(newComment);
+
+      // Создаем элемент комментария и добавляем его в конец списка
+      const commentElement = renderComment(newComment, commentsData.length - 1);
+      addListElement.appendChild(commentElement);
+
+      // Очистим поля ввода после добавления комментария
+      addFormNameElement.value = '';
+      addFormText.value = '';
+    }
   </script>
 </html>
