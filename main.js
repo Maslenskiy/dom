@@ -21,28 +21,53 @@ const formatDateTime = () => {
 let comments = [];
 buttonElement.disabled = true;
 loaderElement.innerHTML = "Подождите пожалуйста, комментарии загружаются...";
+
 const fetchAndRenderComments = () => { 
     fetch("https://wedev-api.sky.pro/api/v1/yuriy-maslenskiy/comments", {
         method: "GET"
-    }).then((response) => {
-        response.json().then((responseData) => {
-            const appComments = responseData.comments.map((comment) => {
-                return {
-                    name: comment.author.name,
-                    date: formatDateTime(comment.date),
-                    text: comment.text,
-                    likes: comment.likes,
-                    isLiked: false,
-                };
-            });
-            comments = appComments;
-            renderComments();
-        }).then((response) => {
-            buttonElement.disabled = false;
-            loaderElement.textContent = "";
+    })
+    .then((response) => {
+        if (!response.ok) {
+            if (response.status === 500) {
+                throw new Error("Internal Server Error (500)");
+            } else {
+                throw new Error(`Error: ${response.status} - ${response.statusText}`);
+            }
+        }
+        return response.json();
+    })
+    .then((responseData) => {
+        const appComments = responseData.comments.map((comment) => {
+            return {
+                name: comment.author.name,
+                date: formatDateTime(comment.date),
+                text: comment.text,
+                likes: comment.likes,
+                isLiked: false,
+            };
         });
+        comments = appComments;
+        renderComments();
+    })
+    .then(() => {
+        buttonElement.disabled = false;
+        loaderElement.textContent = "";
+    })
+    .catch((error) => {
+        // Добавление обработки ошибок при GET-запросе
+        console.error(`Error fetching comments: ${error.message}`);
+        
+        if (error.message.includes("Failed to fetch")) {
+            alert("Error: No internet connection.");
+        } else {
+            alert(`Error fetching comments: ${error.message}`);
+        }
+
+        // TODO: Отправить информацию об ошибке в систему отслеживания ошибок.
+        // Можете также выполнить дополнительные действия по обработке ошибок.
     });
 };
+
 fetchAndRenderComments();
 
 function delay(interval = 300) {
@@ -174,16 +199,29 @@ buttonElement.addEventListener("click", () => {
         .catch((error) => {
             buttonElement.disabled = false;
             buttonElement.textContent = "Написать";
+        
             if (error.message === "Неверный запрос") {
                 alert("Имя и комментарий должны быть не короче 3 символов");
-            }else if (error.message === "Сервер упал") {
+                nameInputElement.value === "";
+                return;
+            } else if (error.message === "Сервер упал") {
                 alert("Кажется, что-то пошло не так, попробуй позже");
+
                 // handlePostClick();
             } if (error.message === 'Failed to fetch') {
-                alert("Кажется,сломался интернет, попробуй позже");
+             alert('Нет соединения,проверьте подключение к интернету');
+
+            } else{
+                return error.message
             }
-            // TODO: Отправлять в систему сбора ошибок
+            if (error.message.startsWith("500")) {
+                alert("Сервер вернул ошибку 500. Кажется, что-то пошло не так на сервере.");
+                // Дополнительная обработка, специфичная для ошибки 500, если необходимо.
+            }
+        
+            // TODO: Отправить информацию об ошибке в систему отслеживания ошибок.
             console.warn(error);
+        
             //  Пробуем снова, если сервер сломался
             handlePostClick();
         });
