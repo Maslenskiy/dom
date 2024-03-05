@@ -17,12 +17,18 @@ const formatDateTime = () => {
     const hours = String(currentDate.getHours()).padStart(2, '0');
     return `${day}.${month}.${year} ${hours}:${minutes}`;
 };
-// Запрос двнных в API на комментарий
+
+// Запрос данных в API на комментарий
 let comments = [];
 buttonElement.disabled = true;
 loaderElement.innerHTML = "Подождите пожалуйста, комментарии загружаются...";
 
-const fetchAndRenderComments = () => { 
+const fetchAndRenderComments = () => {
+    if (!navigator.onLine) {
+        alert("Нет соединения с интернетом.");
+        return;
+    }
+
     fetch("https://wedev-api.sky.pro/api/v1/yuriy-maslenskiy/comments", {
         method: "GET"
     })
@@ -54,17 +60,12 @@ const fetchAndRenderComments = () => {
         loaderElement.textContent = "";
     })
     .catch((error) => {
-        // Добавление обработки ошибок при GET-запросе
         console.error(`Error fetching comments: ${error.message}`);
-        
         if (error.message.includes("Failed to fetch")) {
             alert("Error: No internet connection.");
-        } else {
-            alert(`Error fetching comments: ${error.message}`);
+        } else if (error.message === "Internal Server Error (500)") {
+            alert("Кажется, что-то пошло не так на сервере. Попробуйте позже.");
         }
-
-        // TODO: Отправить информацию об ошибке в систему отслеживания ошибок.
-        // Можете также выполнить дополнительные действия по обработке ошибок.
     });
 };
 
@@ -72,13 +73,13 @@ fetchAndRenderComments();
 
 function delay(interval = 300) {
     return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve();
-      }, interval);
+        setTimeout(() => {
+            resolve();
+        }, interval);
     });
-};
+}
 
-//Ркндер функция
+// Рендер функция
 const renderComments = () => {
     const commentsHtml = comments
         .map((comment, index) => {
@@ -97,42 +98,42 @@ const renderComments = () => {
                         <button class="${comment.isLike ? 'like-button active-like': 'like-button'} " data-index="${index}"></button>
                     </div>
                 </div>
-             </li>`;
+            </li>`;
         }).join("");
-    
+
     commentsElement.innerHTML = commentsHtml;
-    
-    // кнопка Цитирования
+
+    // Кнопка Цитирования
     const quoteElements = document.querySelectorAll(".comment");
     for (const comment of quoteElements) {
         comment.addEventListener("click", () => {
-        const index = comment.dataset.index;
+            const index = comment.dataset.index;
             const comentText = comments[index].text;
             const comentAuthor = comments[index].name;
 
             commentInputElement.value = `>${comentAuthor} ${comentText} `;
-        })
-    };
+        });
+    }
 
     initLikesListeners();
-    initDeleteButtonsLisners();
+    initDeleteButtonsListeners();
 };
-//Кнопка лайков
+
+// Кнопка лайков
 const initLikesListeners = () => {
     for (const commentElement of document.querySelectorAll(".like-button")) {
-        // Добавляет обработчик клика на конкретный элемент в списке
         commentElement.addEventListener("click", (event) => {
             event.stopPropagation();
             const index = commentElement.dataset.index;
             comments[index].likes += comments[index].isLike ? -1 : +1;
             comments[index].isLike = !comments[index].isLike;
             renderComments();
-        }); 
-    };
-    
+        });
+    }
 };
-//Кнопка удаления 
-const initDeleteButtonsLisners = () => {
+
+// Кнопка удаления 
+const initDeleteButtonsListeners = () => {
     const deleteButtonsElements = document.querySelectorAll(".delete-form-button");
     for (const deleteButtonsElement of deleteButtonsElements) {
         deleteButtonsElement.addEventListener("click", (event) => {
@@ -141,30 +142,34 @@ const initDeleteButtonsLisners = () => {
             comments.splice(index, 1);
             renderComments();
         });
-    }; 
+    }
 };
+
 renderComments();
 
-//форма добавления  
-
+// Форма добавления  
 buttonElement.addEventListener("click", () => {
     nameInputElement.style.backgroundColor = "white" ;
     commentInputElement.style.backgroundColor = "white";
     if (nameInputElement.value === "") {
-    nameInputElement.style.backgroundColor = "red";
-    return;
+        nameInputElement.style.backgroundColor = "red";
+        return;
     }
     if (commentInputElement.value === "") {
-    commentInputElement.style.backgroundColor = "red";
-    return;
+        commentInputElement.style.backgroundColor = "red";
+        return;
     }
     buttonElement.disabled = true;
     buttonElement.textContent = "Комментарий добавляется...";
-    // const oldAddForm = addForm.innerHTML;
-    // addForm.classList.remove("add-form");
-    // addForm.textContent = "Комментарий добавляется...";
-    
+
     const handlePostClick = () => {
+        if (!navigator.onLine) {
+            alert("Нет соединения с интернетом.");
+            buttonElement.disabled = false;
+            buttonElement.textContent = "Написать";
+            return;
+        }
+
         fetch("https://wedev-api.sky.pro/api/v1/yuriy-maslenskiy/comments", {
             method: "POST",
             body: JSON.stringify({
@@ -176,17 +181,15 @@ buttonElement.addEventListener("click", () => {
         .then((response) => {
             console.log(response);
             if (response.status === 201) {
-               return response.json();
+                return response.json();
             }
             if (response.status === 400) {
                 throw new Error("Неверный запрос"); 
-            //   return Promise.reject(new Error("Неверный запрос"));
-            }if (response.status === 500) {
-              throw new Error("Сервер упал");
-            //   return Promise.reject(new Error("Сервер упал"));
             }
-
-          })
+            if (response.status === 500) {
+                throw new Error("Сервер упал");
+            }
+        })
         .then((responseData) => {
             return fetchAndRenderComments();
         })
@@ -199,36 +202,21 @@ buttonElement.addEventListener("click", () => {
         .catch((error) => {
             buttonElement.disabled = false;
             buttonElement.textContent = "Написать";
-        
             if (error.message === "Неверный запрос") {
                 alert("Имя и комментарий должны быть не короче 3 символов");
-                nameInputElement.value === "";
-                return;
-            } else if (error.message === "Сервер упал") {
-                alert("Кажется, что-то пошло не так, попробуй позже");
-
-                // handlePostClick();
-            } if (error.message === 'Failed to fetch') {
-             alert('Нет соединения,проверьте подключение к интернету');
-
-            } else{
-                return error.message
-            }
-            if (error.message.startsWith("500")) {
+            } else if (error.message === "Сервер упал" && error.message.startsWith("500")) {
                 alert("Сервер вернул ошибку 500. Кажется, что-то пошло не так на сервере.");
-                // Дополнительная обработка, специфичная для ошибки 500, если необходимо.
+            } else if (error.message === "Сервер упал") {
+                // Можете добавить дополнительную обработку для других ошибок сервера, если необходимо.
+                alert("Кажется, что-то пошло не так, попробуйте позже");
+            } else if (error.message === 'Failed to fetch') {
+                alert('Нет соединения, проверьте подключение к интернету');
             }
-        
-            // TODO: Отправить информацию об ошибке в систему отслеживания ошибок.
             console.warn(error);
-        
-            //  Пробуем снова, если сервер сломался
-            handlePostClick();
         });
-    };       
+    };
+
     handlePostClick();
     renderComments();
-    initDeleteButtonsLisners();
-  
-      
+    initDeleteButtonsListeners();
 });
