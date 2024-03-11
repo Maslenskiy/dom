@@ -1,100 +1,96 @@
-const buttonElement = document.getElementById("add-button");
-    const listElement = document.getElementById("list");
-    const textInputElement = document.getElementById("text-input");
+import { objOfConst } from "./constant.js";
+import { timeFunction } from "./date.js";
+import { renderComments } from "./render.js";
+import { disabledFunction } from "./disable.js";
 
-    let tasks = [];
+// Принимаем с сервера комментарии
 
-    const fetchAndRenderTasks = () => {
-      return fetch("https://webdev-hw-api.vercel.app/api/todos", {
+export function getComments() {
+    return fetch("https://wedev-api.sky.pro/api/v1/yuriy-maslenskiy/comments", {
         method: "GET",
-      })
-        .then((response) => {
-          return response.json();
-        })
-        .then((responseData) => {
-          tasks = responseData.todos;
-          renderTasks();
-        });
-    };
+    });
+}
 
-    const renderTasks = () => {
-      const tasksHtml = tasks
-        .map((task) => {
-          return `
-          <li class="task">
-            <p class="task-text">
-              ${task.text}
-              <button data-id="${task.id}" class="button delete-button">Удалить</button>
-            </p>
-          </li>`;
-        })
-        .join("");
+// Передаем новые комментарии на сервер
 
-      listElement.innerHTML = tasksHtml;
-      const deleteButtons = document.querySelectorAll(".delete-button");
+export function postComments() {
+    return fetch("https://wedev-api.sky.pro/api/v1/yuriy-maslenskiy/comments", {
+      method: "POST",
+      body: JSON.stringify(
+        {
+            text: objOfConst.commentInputElement.value.replaceAll("<", "&lt;").replaceAll(">", "&gt;"),
+            name: objOfConst.nameInputElement.value.replaceAll("<", "&lt;").replaceAll(">", "&gt;"),
+            date: timeFunction(),
+            likes: objOfConst.comments.likes,
+            isLiked: objOfConst.comments.isLiked,
+            forceError: true,
+        },
+      ),
+    })
+}
 
-      for (const deleteButton of deleteButtons) {
-        deleteButton.addEventListener("click", (event) => {
-          event.stopPropagation();
+// Функция первого рендера страницы
 
-          const id = deleteButton.dataset.id;
+export function fetchAndRender() {
+  return getComments()
+  .then((response) => {
+    return response.json();
+  })
+  .then((responseData) => {
+    objOfConst.comments = responseData.comments.map((comment) => {
+      return {
+        name: comment.author.name,
+        date: timeFunction(comment.date),
+        text: comment.text,
+        likes: comment.likes,
+        isLiked: comment.isLiked,
+      };
+    });
+    return renderComments();
+  })
+  }
 
-          fetch("https://webdev-hw-api.vercel.app/api/todos/" + id, {
-            method: "DELETE",
-          }).then((response) => {
-            response.json().then((responseData) => {
-              // { result: 'ok' }
-              tasks = responseData.todos;
-              renderTasks();
-            });
-          });
+// Функция добавления комментария на сервер и проверки на ошибки
 
-          renderTasks();
-        });
+export function fetchPostAndErrors() {
+    return postComments()
+    .then((response) => {
+  
+      if (response.status === 500) {
+        throw new Error("Ошибка сервера");
+      } else if (response.status === 400) {
+        throw new Error("Неверный запрос");
+      } else {
+        return response.json();
       }
-    };
-
-    fetchAndRenderTasks();
-    renderTasks();
-
-    buttonElement.addEventListener("click", () => {
-      if (textInputElement.value === "") {
+      
+    })
+    .then(() => {
+      return fetchAndRender();
+    })
+    .then(() => {
+      return disabledFunction(false);
+    })
+    .then(() => {
+      objOfConst.nameInputElement.value = "";
+      objOfConst.commentInputElement.value = "";
+    })
+    .catch((error) => {
+      disabledFunction(false);
+      objOfConst.addingText.style.opacity = "0";
+      if (error.message === "Ошибка сервера") {
+        alert("Сервер сломался, попробуйте позже");
+        console.warn("Код ошибки - 500");
+        return;
+      } else if (error.message === "Неверный запрос") {
+        alert("Имя и комментарий должны быть не короче 3х символов");
+        console.warn("Код ошибки - 400");
+        return;
+      } else {
+        alert("Кажется, у Вас проблемы с интернетом");
+        console.warn("Нет сети");
         return;
       }
 
-      buttonElement.disabled = true;
-      buttonElement.textContent = "Элемент добавлятся...";
-      fetch("https://webdev-hw-api.vercel.app/api/todos/with-error", {
-        method: "POST",
-        body: JSON.stringify({
-          text: textInputElement.value,
-        }),
-      })
-        .then((response) => {
-          console.log(response);
-          if (response.status === 201) {
-            return response.json();
-          } else {
-            // Код, который обработает ошибку
-            // throw new Error("Сервер упал");
-            return Promise.reject(new Error("Сервер упал"));
-          }
-        })
-        .then(() => {
-          return fetchAndRenderTasks();
-        })
-        .then(() => {
-          buttonElement.disabled = false;
-          buttonElement.textContent = "Добавить";
-          textInputElement.value = "";
-        })
-        .catch((error) => {
-          buttonElement.disabled = false;
-          buttonElement.textContent = "Добавить";
-          alert("Кажется, что-то пошло не так, попробуй позже");
-          // TODO: Отправлять в систему сбора ошибок
-          console.warn(error);
-        });
-
-      renderTasks();
     });
+  };
