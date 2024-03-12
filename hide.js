@@ -5,10 +5,12 @@ const buttonElement = document.getElementById("add-form-button");
 export const hideSeeAddComment = () => {
     buttonElement.addEventListener("click", () => {
         if(inputElement === "" || textAreaElement == ""){
-            buttonElement.disabled = false;
-            listElement.textContent = "";
+             buttonElement.disabled = false;
+    listElement.textContent = "";
             return
         }
+        buttonElement.disabled = true;
+        listElement.textContent = "Добавление комментария";
     });
     buttonElement.disabled = false;
     listElement.textContent = "";
