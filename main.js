@@ -38,6 +38,16 @@ function loadApi() {
             renderComments({comments});
             loader.style.display = "none";
         })
+        .catch((error) => {
+            loader.style.display = "none";
+            console.error("Error fetching comments:", error);
+
+            if (error.status === 500) {
+                // Handle the specific error for a 500 status code
+                console.error("Internal Server Error. Please try again later.");
+                return
+            }
+        });
 };
 
 
