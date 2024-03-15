@@ -38,14 +38,19 @@ function loadApi() {
             renderComments({comments});
             loader.style.display = "none";
         })
+        .then(() => {
+            // В случае успешного выполнения запроса, этот блок будет выполнен
+            console.log("Запрос успешно выполнен");
+        })
         .catch((error) => {
             loader.style.display = "none";
-            console.error("Error fetching comments:", error);
 
             if (error.status === 500) {
-                // Handle the specific error for a 500 status code
-                console.error("Internal Server Error. Please try again later.");
-                return
+                alert("Внутренняя ошибка сервера. Пожалуйста, попробуйте позже.");
+            } else if (error.status === 400) {
+                alert("Ошибка неверного запроса. Пожалуйста, проверьте введенные данные.");
+            } else {
+                alert("Произошла ошибка: " + error.message);
             }
         });
 };
