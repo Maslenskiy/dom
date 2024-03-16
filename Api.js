@@ -3,9 +3,15 @@ export function getComments() {
         {
             method: 'GET',
         })
-
         .then((response) => {
-            return response.json()
+            if (!response.ok) {
+                if (response.status === 500) {
+                    throw new Error("Internal Server Error (500)");
+                } else {
+                    throw new Error(`Error: ${response.status} - ${response.statusText}`);
+                }
+            }
+            return response.json();
         })
 }
 

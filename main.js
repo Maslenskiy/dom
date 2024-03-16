@@ -39,20 +39,21 @@ function loadApi() {
             loader.style.display = "none";
         })
         .then(() => {
-            // В случае успешного выполнения запроса, этот блок будет выполнен
-            console.log("Запрос успешно выполнен");
+            nameInputElement.value = "";
+            textInputelement.value = '';
+            addFormElement.style.visibility = "visible";
+            onSendLoader.style.display = "none";
+            
         })
         .catch((error) => {
-            loader.style.display = "none";
-
-            if (error.status === 500) {
-                alert("Внутренняя ошибка сервера. Пожалуйста, попробуйте позже.");
-            } else if (error.status === 400) {
-                alert("Ошибка неверного запроса. Пожалуйста, проверьте введенные данные.");
-            } else {
-                alert("Произошла ошибка: " + error.message);
+            console.error(`Error fetching comments: ${error.message}`);
+            if (error.message.includes("Failed to fetch")) {
+                alert("Error: No internet connection.");
+            } else if (error.message === "Internal Server Error (500)") {
+                alert("Кажется, что-то пошло не так на сервере. Попробуйте позже.");
             }
         });
+        
 };
 
 
