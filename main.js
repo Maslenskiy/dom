@@ -38,22 +38,7 @@ function loadApi() {
             renderComments({comments});
             loader.style.display = "none";
         })
-        .then(() => {
-            nameInputElement.value = "";
-            textInputelement.value = '';
-            addFormElement.style.visibility = "visible";
-            onSendLoader.style.display = "none";
-            
-        })
-        .catch((error) => {
-            console.error(`Error fetching comments: ${error.message}`);
-            if (error.message.includes("Failed to fetch")) {
-                alert("Error: No internet connection.");
-            } else if (error.message === "Internal Server Error (500)") {
-                alert("Кажется, что-то пошло не так на сервере. Попробуйте позже.");
-            }
-        });
-        
+      
 };
 
 
