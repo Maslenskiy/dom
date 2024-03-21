@@ -1,186 +1,201 @@
-import { commentList, fetchAndRenderComments } from "./main.js";
-import { initDeleteButtonsListeners } from "./delbutton.js";
-import { setToken, token, postComment, getComments, getToken } from "./api.js";
-import { renderLoginForm } from "./renderLogin.js";
+
 import { sanitizeHtml } from './sanitizeHtml.js';
 
+import { postComment, token } from './api.js';
+import { comments, fetchAndRenderComments, user } from './main.js';
+import { renderLogin } from './renderLogin.js';
 
 
-//Выводим комменты
-export const renderComments = () => {
-  const appHtml = document.getElementById("app");
-/*   console.log(commentList); */
-  const commentsHtml = commentList.map((comment, index) => {
-    return `<li class="comment" data-index="${index}">
+
+export const renderComment = () => {
+  const appElement = document.getElementById("app");
+
+  const commentHtml = comments.map((comment, index) => {
+    return `<li class="comment" data-name="${comment.name}" data-text="${comment.text}">
           <div class="comment-header">
-            <div id="">${comment.name}</div>
+            <div>${comment.name}</div>
             <div>${comment.date}</div>
           </div>
           <div class="comment-body">
-            <div id="" class="comment-text" >
-              ${comment.text}
+            <div class="comment-text">
+              ${comment.text.replaceAll("BEGIN_QUOTE", "<div class='quote'>").replaceAll("END_QUOTE", "</div>")}
             </div>
           </div>
           <div class="comment-footer">
-            <button id="delete-form-button" class="delete-form-button" data-index="${index}">Удалить</button>
             <div class="likes">
               <span class="likes-counter">${comment.likes}</span>
-              <button class="like-button ${comment.isLiked ? "-active-like" : ""}" data-index="${index}"></button>
+              <button class="like-button ${comment.isLiked ? "-active-like" : ''}" data-index="${index}"></button>
             </div>
           </div>
-        </li>`;
-  }).join("");
+          </li>`;
+  }).join('');
 
-  //Форма ввода комментария
-  const contentHtml = () => {
-    const btnLogin = `
-    <p class="render-login-btn">  Чтобы добавить комментарий, 
-    <a id="render-login-btn">авторизуйтесь</a> </p>`
+  const formHtml = () => {
+    if (!token) return btnLogin;
+    return `
+  <div id="add-form" class="add-form">
+  <input type="text" id="name-input" class="add-form-name" value="${user.name}" readonly/>
+  <textarea type="textarea" id="textarea-input" class="add-form-text" placeholder="Введите ваш коментарий"
+    rows="4"></textarea>
+  <div class="add-form-row">
+    <button id="add-button" class="add-form-button">Написать</button>
+  </div>
 
-    if (!token) return `<ul id="comments" class="comments">${commentsHtml}</ul>
-     ${btnLogin}`;
-    return `<ul id="comments" class="comments">${commentsHtml}</ul>
-    <div id="add-form" class="add-form">
-      <input id="add-name" type="text" class="add-form-name" placeholder="Введите ваше имя" />
-      <textarea id="add-text" type="textArea" class="add-form-text" placeholder="Введите ваш коментарий"
-        rows="4"></textarea>
-      <div class="add-form-row">
-        <button id="add-form-button" class="add-form-button">Написать</button>
-        </div>
-    </div>
-    `
+</div>
+<div id="add-comment" ></div>
+<button id="exit-button" class="add-form-button">Выйти</button>
+`
   }
 
-  appHtml.innerHTML = contentHtml()
-
-  
-  //Переход к форме авторизации по клику
- const setLoginBtn = () => {
-    const buttonLoginElement = document.getElementById("render-login-btn");
-    if (!buttonLoginElement){
-      return;
-    }
-    buttonLoginElement.addEventListener("click", (event) => {
-      event.preventDefault();
-      renderLoginForm();
-    });
-  };
-  setLoginBtn();
 
 
-
-};
-
-/* initLikeListener();
-initDeleteButtonsListeners();
-quoteCommets(); */
-
-
-  //Активность кнопки лайк
-  export const initLikeListener = () => {
-    const buttonLike = document.querySelectorAll(".like-button");
-    for (const iteratorLike of buttonLike) {
-      iteratorLike.addEventListener("click", (event) => {
-        
-        event.stopPropagation();
-        if (!token) {
-          alert("autorize")
-          return
-        }
-        const index = iteratorLike.dataset.index;
-        commentList[index].likes += commentList[index].isLiked ? -1 : +1;
-        commentList[index].isLiked = !commentList[index].isLiked;
-        renderComments(); //перерисовываем форму для лайков с счетчиком
-        initLikeListener()
-
-      });
-    }
- 
-  }
-  
-  
-//Цитирование
-export const quoteCommets = () => {
-  const textAreaElement = document.getElementById("add-text");
-  const commentElements = document.querySelectorAll(".comment");
-  for (const commentElement of commentElements) {
-    commentElement.addEventListener("click", () => {
-      const index = commentElement.dataset.index;
-      const commentText = commentList[index].text;
-      const commentAuthor = commentList[index].name;
-      textAreaElement.value = `${commentText} > ${commentAuthor}`;
+  function exit() {
+    const exitButton = document.getElementById("exit-button");
+    exitButton?.addEventListener('click', () => {
+      localStorage.removeItem("token");
+      localStorage.removeItem("user");
+      renderLogin();
     })
-  };
- /*  addComment(); */
-};
+  }
 
-export const addComment = () => {
-  const textAreaElement = document.getElementById("add-text");
-  const inputElement = document.getElementById("add-name");
-  const buttonElement = document.getElementById("add-form-button");
-  console.log(inputElement, textAreaElement)
-  buttonElement.addEventListener("click", () => {
-    inputElement.classList.remove("error");
-    if (inputElement.value === "") {
-      inputElement.classList.add("error");
-    }
-    if (textAreaElement.value === "") {
-      textAreaElement.classList.add("error");
+  const btnLogin = `
+<p class="render-login-btn">  Чтобы добавить комментарий, <u>авторизуйтесь</u> </p>
+`
+  function actionRenderLoginbtn() {
+    if (token) return
+    const btn = document.querySelector(".render-login-btn")
+    btn.addEventListener('click', () => {
+      renderLogin()
+    })
+  }
+
+  const appHtml = `
+    <div class="container">
+    <ul id="list" class="comments">
+
+${commentHtml}
+    </ul>
+   ${formHtml()}
+  </div>
+    `;
+
+  appElement.innerHTML = appHtml;
+
+  actionRenderLoginbtn();
+exit();
+
+
+  // new comment
+
+  const addNewComment = () => {
+
+    const textareaInputElement = document.getElementById("textarea-input");
+
+
+    textareaInputElement.classList.remove("error");
+
+    if (textareaInputElement.value === "") {
+      textareaInputElement.classList.add("error");
+
       return;
-    };
+    }
 
-    //2.13. надпись о загрузке коммента и блокировка кнопки "добавить".
-    postComment(/* inputElement.value,
-      textAreaElement.value,  */sanitizeHtml(textAreaElement.value))
+
+
+    //отвалилось
+    const addForm = document.getElementById("add-form");
+    const addComment = document.getElementById("add-comment");
+
+    addForm.classList.add("hidden");
+
+    addComment.innerHTML = "Элемент добавляется...";
+    console.log(addComment.innerHTML);
+
+
+
+    postComment({
+      text: sanitizeHtml(textareaInputElement.value),
+
+    })
       .then((response) => {
         if (response.status === 201) {
-          /* return response.json(); */
-          fetchAndRenderComments();
+
+          fetchAndRenderComments()
+
+
+
           addForm.classList.remove("hidden");
           addComment.classList.add("hidden");
-          textareaInputElement.value = "";
-          return;
+          textareaInputElement.value = '';
+
+          return
         }
         if (response.status === 400) {
-          throw new Error("Некорректный запрос error 400");
-        } if (response.status === 500) {
-          throw new Error("Ошибка сервера error 500");
+          return Promise.reject("вы ввели имя короче 3-х символов");
         }
-      }).then(() => {
-        inputElement.value = "";
-        textAreaElement.value = "";
-        return /* getComments() */;
+        if (response.status === 500) {
+          return Promise.reject("ошибка сервера");
+        }
+        return Promise.reject("сервер упал");
+
       })
       .catch((error) => {
-        buttonElement.disabled = true;
-        if (error.message === "Некорректный запрос error 400") {
-          alert("Длина имени не может быть меньше 3 символов");
-        } else if (error.message === "Ошибка сервера error 500") {
-          alert("Ошибка сервера");
-        } else if (error.message === "Failed to fetch") {
-          alert("Отуствует соединение к интеренету");
-        };
-        buttonElement.disabled = false;
-        /* renderComments(); */
-
+        addForm.classList.remove("hidden");
+        addComment.classList.add("hidden");
+        alert(error);
+        //todo:отправлять в систему сбора ошибок??
+        console.warn(error);
       })
-  })
-  if (getToken) {
-    const buttonElement = document.getElementById('add-button');
-    buttonElement.addEventListener('click', (event) => {
-      initLikeListener();
-      initDeleteButtonsListeners();
-      quoteCommets();
-     renderComments();
-     exit();
-    });
 
-    /* addComment(); */
+  };
+
+  if (token) {
+    const buttonElement = document.getElementById('add-button');
+
+    buttonElement.addEventListener('click', addNewComment);
+    
   }
-  fetchAndRenderComments();
- 
+
+  
+  initLikeListeners();
+  initAnswerCommentListeners();
 
 };
+
+
+
+
+
+
+const initLikeListeners = () => {
+  const likeButtons = document.querySelectorAll('.like-button');
+  for (const likeButton of likeButtons) {
+    likeButton.addEventListener('click', (event) => {
+      event.stopPropagation();
+      if (!token) {
+        alert("autorize")
+        return
+      }
+      const index = likeButton.dataset.index;
+      comments[index].likes += comments[index].isLiked ? -1 : +1;
+      comments[index].isLiked = !comments[index].isLiked;
+
+      renderComment();
+    });
+  }
+};
+// answer a comment
+export const initAnswerCommentListeners = () => {
+  const textareaInputElement = document.getElementById("textarea-input");
+  const commentsList = document.querySelectorAll('.comment');
+  for (const theComment of commentsList) {
+    theComment.addEventListener('click', () => {
+      const name = theComment.dataset.name;
+      const text = theComment.dataset.text;
+      textareaInputElement.value = `BEGIN_QUOTE${name}:\n${text}END_QUOTE`
+    });
+  }
+}
 
 
 

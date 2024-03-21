@@ -1,63 +1,36 @@
-import { formatDateTime } from "./datetime.js";
-import { getComments, getToken, setToken, token } from "./api.js";
-import { initDeleteButtonsListeners } from "./delbutton.js";
-import { renderComments, addComment, initLikeListener } from "./render.js";
 
 
+import { getComments } from './api.js';
+
+import { formatDateTime } from './formatDateTime.js';
+
+import { renderComment } from './render.js';
+// import { renderLogin } from './renderLogin.js';
+// localStorage.clear();
 export let user = JSON.parse(localStorage.getItem("user"));
 export const setUser = (newUser) => {
-  user = newUser;
+    user = newUser;
 };
-/* console.log(user); */
+console.log(user);
+export let comments = [];
 
-/* const textAreaElement = document.getElementById("add-text");
-const inputElement = document.getElementById("add-name");
-const outerFormElement = document.getElementById("add-form");
-const addFormElement = document.querySelector(".add-form"); */
-
-
-//Прелоадер страницы
-
-export let commentList = [];
-
-
-// запрос коммента с api
 export const fetchAndRenderComments = () => {
-  getComments().then((responseData) => {
-    commentList = responseData.comments.map((comment) => {
-      return {
-        name: comment.author.name,
-        date: formatDateTime(comment.date),
-        id: comment.id,/*  */
-        isLiked: comment.isLiked,
-        likes: comment.likes,
-        text: comment.text,
-      };
+    getComments().then((responceData) => {
+        const appComments = responceData.comments.map((comment) => {
+            return {
+                name: comment.author.name,
+                date: formatDateTime(new Date(comment.date)),
+                text: comment.text,
+                likes: comment.likes,
+                isLiked: false,
+            };
+        });
+        comments = appComments;
+        renderComment();
+
     });
-    console.log(commentList);
-    renderComments();
-
-    if (token) {
-      const buttonElement = document.getElementById("add-form-button");
-      buttonElement.disabled = false;
-      
-      initLikeListener();
-      initDeleteButtonsListeners();
-      addComment();
-      renderComments();
-    }
-  });
-
-
 };
+
 fetchAndRenderComments();
-
-//Цитата коммента
-
-
-/* initDeleteButtonsListeners(); */
-
-
-//функция добавления коммента
 
 
