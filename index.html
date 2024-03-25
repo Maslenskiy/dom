@@ -8,31 +8,16 @@
 </head>
 
 <body>
-  <div class="container">
-    <div class="loader">Комментарии загружаются...</div>
-    <ul class="comments" id="list">
-    </ul>
-    <div class="add-comment-wrapper">
-      <div class="send-comment-loader">
-        <span>Комментарий добавляется, подождите...</span>
-      </div>
-      <div class="add-form">
-        <input type="text" class="add-form-name" placeholder="Введите ваше имя" id="name_input" />
-        <textarea type="textarea" class="add-form-text" placeholder="Введите ваш коментарий" rows="4"
-          id="text_input"></textarea>
-        <div class="add-form-row">
-          <button class="add-form-button" id="send-button">Написать</button>
-        </div>
-      </div>
-    </div>
+
+  <div id="app">
+    <div class="container" id="comments-loading" class="comments-loading">Пожалуйста ожидайте, комментарии загружаются...</div>
   </div>
 </body>
 <style>
   .error {
-    background-color: rgb(250, 57, 57);
+    background-color: red;
   }
 </style>
-
 <script type="module" src="main.js"></script>
 
 </html>
