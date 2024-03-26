@@ -1,4 +1,4 @@
-import { login, register, setToken, token } from "./api.js";
+import { login, register, setToken } from "./api.js";
 import { fetchAndRenderComments, setUser } from './main.js';
 
 
@@ -48,8 +48,11 @@ export const renderLogin = () => {
     })
   });
 
+
+//почему зачеркивает which? какой метод актуальный как заменить?
   
   passwordInputElement.addEventListener('keypress', function (e) {
+
     let key = e.which || e.key
     if (key === 13) { // код клавиши Enter
       buttonElement.click();
@@ -63,10 +66,6 @@ export const renderLogin = () => {
     renderRegin();
   });
 };
-
-
-
-
 
 
 

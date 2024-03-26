@@ -58,6 +58,7 @@ export const renderComment = () => {
     })
   }
 
+
   const btnLogin = `
 <p class="render-login-btn">  Чтобы добавить комментарий, <u>авторизуйтесь</u> </p>
 `
@@ -82,8 +83,8 @@ ${commentHtml}
   appElement.innerHTML = appHtml;
 
   actionRenderLoginbtn();
-exit();
 
+exit();
 
   // new comment
 
@@ -101,8 +102,6 @@ exit();
     }
 
 
-
-    //отвалилось
     const addForm = document.getElementById("add-form");
     const addComment = document.getElementById("add-comment");
 

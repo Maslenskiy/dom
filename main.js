@@ -1,12 +1,12 @@
 
-
+import { format } from "date-fns";
 import { getComments } from './api.js';
 
-import { formatDateTime } from './formatDateTime.js';
+//import { formatDateTime } from './formatDateTime.js';
 
 import { renderComment } from './render.js';
 // import { renderLogin } from './renderLogin.js';
-// localStorage.clear();
+
 export let user = JSON.parse(localStorage.getItem("user"));
 export const setUser = (newUser) => {
     user = newUser;
@@ -19,7 +19,7 @@ export const fetchAndRenderComments = () => {
         const appComments = responceData.comments.map((comment) => {
             return {
                 name: comment.author.name,
-                date: formatDateTime(new Date(comment.date)),
+                date: format(new Date(comment.date),"yyyy-MM-dd hh.mm.ss"),
                 text: comment.text,
                 likes: comment.likes,
                 isLiked: false,
